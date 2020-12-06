@@ -52,14 +52,16 @@ def make_adjacency_matrix(n_nodes, connected=False, directed=False, with_loops=F
     mxmx = mx + mx.T
     if directed and 2 in mxmx.ravel():
         for (i,j) in nx:
-            if mxmx[i,j]==2 and (i > j):
-                mx[i,j] = 0
+            if i > j and mxmx[i,j]==2:
+                if random.rand() > 0.5:
+                    mx[i,j] = 0
+                else: mx[j,i] = 0
     return mx
 
 
 ####################################################################################
 
-def detect_cycle_dfs(matrix : 'adjacency matrix representing a graph'):
+def detect_cycle_dfs(matrix):
     """searches from each node with DFS for a cycle,
        and returns [] if no cycle was detected else a tuple (from-edge, backward-edge-node)"""
     
@@ -87,7 +89,7 @@ def detect_cycle_dfs(matrix : 'adjacency matrix representing a graph'):
 
 
 
-def detect_cycle_recursively(matrix : 'adjacency matrix representing a graph'):
+def detect_cycle_recursively(matrix):
     """Returns True if a directed graph has at least one cycle
         Explores the graph with a recursive search.
         The outer loop is iterative. The inner loop is recursive (dfs in effect)"""
@@ -132,17 +134,81 @@ def detect_cycle_recursively(matrix : 'adjacency matrix representing a graph'):
 ###########################################################################################
 
 
-#make a random directed graph
-mx = make_adjacency_matrix(n_nodes=5, connected=False, directed=True, with_loops=False,
-                           edge_probability=0.5, random_state=True)
-print(mx)
+
+def test(n_nodes, edge_probability=None):
+    
+    from random import random
+    edge_probability = edge_probability or random()
+    
+    #make a random directed graph
+    mx = make_adjacency_matrix(n_nodes=n_nodes, connected=False, directed=True, with_loops=False,
+                               edge_probability=edge_probability, random_state=None)
+    print(mx)
+    
+    
+    ##
+    s = str(mx.tolist()).replace('[', '{').replace(']','}')
+    #print(s)
+    
+    
+    #detect cycles
+    l = detect_cycle_dfs(mx)
+    b = detect_cycle_recursively(mx)
+    print(b, bool(l))
+    
+    
+    import re
+    p = re.compile("[^01\n]")
+    s = p.sub('', str(mx)) + '\n'
+    #print(s)
+    
+    
+    #save to file
+    path = "/home/linux-ubuntu/Working/data.txt"
+    with open(path, mode='wt', encoding='utf_8') as fh:
+        fh.write(s)
+    
+
+def main():
+    from sys import argv
+    from sys import exit
+    
+    edge_probability = None
 
 
-#detect cycles
-l = detect_cycle_dfs(mx)
-b = detect_cycle_recursively(mx)
+    if len(argv) < 2:
+        print("must provide: number of nodes (and optionally edge probability)")
+        exit()
+    
+    if len(argv) >= 2:
+        n_nodes = int(argv[1])
+        if n_nodes < 3:
+            print("number of nodes must be at least 3")
+            exit()
+    if len(argv) == 3:
+        edge_probability = float(argv[2])
+
+    
+    
+    print("running with the following arguments:\nnumber of nodes:", n_nodes, "\tedge probability:", edge_probability, "...")
+    test(n_nodes=n_nodes, edge_probability=edge_probability)
 
 
+
+if __name__ == '__main__': main()
+#main()
+
+
+
+
+
+
+
+
+
+
+
+"""
 #make a networkx-graph-object and draw the graph
 import networkx as nx
 G = nx.DiGraph(mx)
@@ -163,7 +229,7 @@ for no in range(n_tests):
     r2 = detect_cycle_recursively(mx)
     
     print("test {:0>2d}\t".format(no), "OK\t" if r1==r2==r0 else "error\t", r0,r1, r2)
-
+"""
 
 
 
